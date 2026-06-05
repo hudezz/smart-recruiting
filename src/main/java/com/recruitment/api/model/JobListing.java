@@ -21,4 +21,5 @@ public class JobListing {
     private Integer minimumWorkExperience;
     private Boolean requiredCertification;
 
+
 }
