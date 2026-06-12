@@ -9,4 +9,5 @@ public interface ApplicantRepository extends JpaRepository<Applicant, Long> {
     List<Applicant> findByJobListingIdAndYearsOfExperienceGreaterThanEqual(Long jobListingId, Integer years);
 
 
+    List<Applicant> findByJobListingId(Long jobListingId);
 }
