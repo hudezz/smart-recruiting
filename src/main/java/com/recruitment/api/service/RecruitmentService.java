@@ -5,10 +5,8 @@ import com.recruitment.api.model.JobListing;
 import com.recruitment.api.repository.ApplicantRepository;
 import com.recruitment.api.repository.JobListingRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.antlr.v4.runtime.misc.NotNull;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -26,47 +24,83 @@ public class RecruitmentService {
      * Filters applicants based on job listing requirements.
      */
     public List<Applicant> filterApplications(Long jobListingId, Integer minExperience, Boolean requiresCertification) {
-        //  Validate input parameters
-         if (jobListingId==null)
-             throw new IllegalArgumentException("jobListingId cannot be null");
+        // Validate input parameters
+        if (jobListingId == null) {
+            throw new IllegalArgumentException("jobListingId cannot be null");
+        }
 
-        //  Retrieve the JobListing entity from jobListingRepository.
-       JobListing jobListings= jobListingRepository.findById(jobListingId).orElseThrow(() ->new EntityNotFoundException("jobListingId not found"));
+        // Retrieve the JobListing entity from jobListingRepository.
+        JobListing jobListing = jobListingRepository.findById(jobListingId)
+                .orElseThrow(() -> new EntityNotFoundException("jobListingId not found"));
 
-        // Querying applicants associated with the jobListingId who meet the minExperience and certification criteria.
-       List<Applicant>matchedApplicants = applicantRepository.findByJobListingId(jobListingId);
+        // Querying applicants associated with the jobListingId
+        List<Applicant> matchedApplicants = applicantRepository.findByJobListingId(jobListingId);
 
-         //post-query filtering or sorting
-        List<Applicant> filteredApplicants = matchedApplicants.stream()
-                .filter(app -> app.getYearsOfExperience() >= minExperience)
-                .filter(app -> !requiresCertification || app.getHasCertification())
+        // Post-query filtering (handling null checks for safety)
+        return matchedApplicants.stream()
+                .filter(app -> app.getYearsOfExperience() != null && app.getYearsOfExperience() >= minExperience)
+                .filter(app -> !Boolean.TRUE.equals(requiresCertification) || Boolean.TRUE.equals(app.getHasCertification()))
                 .toList();
-        // TODO: 5. Return the filtered list of applicants.
-        return filteredApplicants;
     }
 
     /**
      * Calculates a match score between an applicant and a job listing.
      */
     public double calculateMatchScore(Applicant applicant, JobListing jobListing) {
-        // TODO: 1. Initialize match score variable to 0.0.
-        // TODO: 2. Check if the applicant meets the minimum work experience required by the job listing.
-        //          Add weighted points to the score if they meet or exceed the requirement.
-        // TODO: 3. Check if the job listing requires a certification. If so, verify if the applicant has it.
-        //          Add points if they have it; deduct or fail matching if they do not.
-        // TODO: 4. Calculate final normalized score (e.g., on a scale of 0.0 to 100.0) based on weighted parameters.
-        // TODO: 5. Return the calculated match score.
-        return 0.0;
+        double score = 0.0;
+
+        // 1. Experience Check
+        if (applicant.getYearsOfExperience() != null && jobListing.getMinimumWorkExperience() != null) {
+            if (applicant.getYearsOfExperience() >= jobListing.getMinimumWorkExperience()) {
+                score += 50.0;
+            }
+        }
+
+        // 2. Certification Check
+        // Handles case where getRequiredCertification() might return null
+        if (Boolean.TRUE.equals(jobListing.getRequiredCertification())) {
+            if (Boolean.TRUE.equals(applicant.getHasCertification())) {
+                score += 50.0;
+            }
+        } else {
+            // If the job doesn't require certification, grant the 50 points automatically
+            score += 50.0;
+        }
+
+        // 3. Normalize score (0.0 to 100.0)
+        double maxPossibleScore = 100.0;
+        return (score / maxPossibleScore) * 100.0;
     }
 
     /**
      * Bulk updates the statuses of multiple candidate applications.
      */
     public void bulkUpdateCandidateStatuses(List<Long> applicantIds, String newStatus) {
-        // TODO: 1. Validate that the applicantIds list is not null/empty and the newStatus is a valid status.
-        // TODO: 2. Retrieve the list of Applicant entities using applicantRepository.findAllById(applicantIds).
-        // TODO: 3. Iterate through the retrieved applicants and update their status field (if defined on Applicant model).
-        // TODO: 4. Save the updated list of applicants back to the database using applicantRepository.saveAll().
-        // TODO: 5. (Optional) Log the bulk update action or trigger email notifications to the candidates.
+        // FIXED: Added the logical OR (||) operator
+        if (applicantIds == null || applicantIds.isEmpty()) {
+            throw new IllegalArgumentException("applicantIds cannot be null or empty");
+        }
+
+        // FIXED: Added the logical OR (||) operator
+        if (newStatus == null || newStatus.trim().isEmpty()) {
+            throw new IllegalArgumentException("newStatus cannot be null or empty");
+        }
+
+        // Retrieve the list of Applicant entities
+        List<Applicant> applicants = applicantRepository.findAllById(applicantIds);
+        if (applicants.isEmpty()) {
+            throw new EntityNotFoundException("No applicants found for the provided IDs");
+        }
+
+        // Iterate and update status
+        for (Applicant applicant : applicants) {
+            applicant.setStatus(newStatus);
+        }
+
+        // Save the updated list back to the database
+        applicantRepository.saveAll(applicants);
+
+        // Optional: Log action
+        System.out.println("Successfully bulk updated " + applicants.size() + " applicants to status: " + newStatus);
     }
 }

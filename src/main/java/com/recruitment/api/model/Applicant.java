@@ -25,5 +25,5 @@ public class Applicant {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_listing_id")
     private JobListing jobListing;
-
+    private String status;
 }
