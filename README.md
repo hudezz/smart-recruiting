@@ -11,6 +11,8 @@ The system follows a clean, layered architectural pattern mapping directly to st
 ```text
 src/main/java/com/recruitment/api/
 ├── SmartRecruitingApplication.java    # Application entry point
+├── controller/
+│   └── RecruitmentController.java     # REST Endpoints for client interaction
 ├── model/
 │   ├── Applicant.java                 # JPA Entity representing candidates
 │   └── JobListing.java                # JPA Entity representing job postings
@@ -23,8 +25,9 @@ src/main/java/com/recruitment/api/
 
 ### Layer Responsibilities
 
+*   **Controller Layer (`controller/`)**: Exposes REST API endpoints and handles incoming HTTP requests/responses, payload validation, and HTTP routing.
 *   **Model Layer (`model/`)**: Defines the core data entities and mappings to the relational database.
-    *   `Applicant`: Represents candidate profiles containing contact information, work experience, certification status, and their linked job application.
+    *   `Applicant`: Represents candidate profiles containing contact information, work experience, certification status, status, and their linked job application.
     *   `JobListing`: Defines the criteria for a job position, including minimum required experience and certification status.
 *   **Repository Layer (`repository/`)**: Abstracts databases queries using Spring Data JPA. Includes custom query methods to retrieve applicants by job listings.
 *   **Service Layer (`service/`)**: Houses business logic, validations, and workflows (e.g., filtering candidates, scoring, and status transitions).
@@ -39,11 +42,14 @@ The typical path of data and logic execution flow within the service is structur
 ```mermaid
 sequenceDiagram
     participant Client
+    participant Controller as RecruitmentController
     participant Service as RecruitmentService
     participant Repo as ApplicantRepository
     participant DB as Database
 
-    Client->>Service: filterApplications(jobListingId, minExperience, requiresCert)
+    Client->>Controller: GET /applications/filter
+    activate Controller
+    Controller->>Service: filterApplications(jobListingId, minExperience, requiresCert)
     activate Service
     Service->>Repo: findByJobListingId(jobListingId)
     activate Repo
@@ -52,14 +58,17 @@ sequenceDiagram
     Repo-->>Service: List<Applicant>
     deactivate Repo
     Note over Service: Apply Java Streams to filter<br/>by years of experience<br/>and certification status
-    Service-->>Client: List<Filtered Applicants>
+    Service-->>Controller: List<Filtered Applicants>
     deactivate Service
+    Controller-->>Client: ResponseEntity<List<Applicant>> (200 OK)
+    deactivate Controller
 ```
 
-1.  **Request Entry**: Client invokes the service layer methods.
-2.  **Data Fetching**: The Service queries the Repositories using JPA methods to fetch the applicant and job listing contexts.
-3.  **In-Memory Processing**: The Service performs business logic calculations, such as match scoring and stream-based filtering, without overloading the database with complex procedural logic.
-4.  **State Synchronization**: Bulk changes and updates are saved back to the database through batch repository transactions.
+1.  **Request Entry**: Client submits an HTTP request to `RecruitmentController`.
+2.  **Service Delegation**: The Controller delegates the processing to `RecruitmentService`.
+3.  **Data Fetching**: The Service queries the Repositories using JPA methods to fetch the applicant and job listing contexts.
+4.  **In-Memory Processing**: The Service performs business logic calculations, such as match scoring and stream-based filtering, without overloading the database.
+5.  **State Synchronization**: Bulk changes and updates are saved back to the database through batch repository transactions.
 
 ---
 
@@ -69,11 +78,12 @@ Here is the current implementation status of our core backend:
 
 | Component | Status | Details |
 | :--- | :--- | :--- |
+| **Controller Endpoints** | `Blueprint` | RestController scaffolded with GET/POST endpoint blueprints awaiting controller logic mapping. |
 | **Model Mapping** | `Active` | Complete JPA setup for `Applicant` and `JobListing` with H2/relational database mapping. |
 | **Data Access** | `Active` | `ApplicantRepository` and `JobListingRepository` interfaces are active, including custom query methods like `findByJobListingId`. |
 | **Application Filtering** | `Active` | Implemented in `RecruitmentService#filterApplications` using Java Streams. Filters applications by experience duration and required certifications in-memory. |
-| **Match Score Engine** | `Scaffolded` | Skeleton method signature created in `RecruitmentService#calculateMatchScore` with defined execution steps. |
-| **Bulk Updates** | `Scaffolded` | Skeleton method signature created in `RecruitmentService#bulkUpdateCandidateStatuses` with transaction/saving steps. |
+| **Match Score Engine** | `Active` | Calculates experience validation and certification weighting to compute scores. |
+| **Bulk Updates** | `Active` | Complete transaction workflow to batch update candidate status fields. |
 
 ---
 
