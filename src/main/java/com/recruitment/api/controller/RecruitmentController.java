@@ -1,31 +1,20 @@
 package com.recruitment.api.controller;
 
-import com.recruitment.api.model.Applicant;
-import com.recruitment.api.model.JobListing;
-import com.recruitment.api.repository.ApplicantRepository;
-import com.recruitment.api.repository.JobListingRepository;
+import com.recruitment.api.dto.ApplicantDto;
 import com.recruitment.api.service.RecruitmentService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/recruitment")
 public class RecruitmentController {
 
     private final RecruitmentService recruitmentService;
-    private final ApplicantRepository applicantRepository;
-    private final JobListingRepository jobListingRepository;
 
-    public RecruitmentController(RecruitmentService recruitmentService,
-                                 ApplicantRepository applicantRepository,
-                                 JobListingRepository jobListingRepository) {
+    public RecruitmentController(RecruitmentService recruitmentService) {
         this.recruitmentService = recruitmentService;
-        this.applicantRepository = applicantRepository;
-        this.jobListingRepository = jobListingRepository;
     }
 
     /**
@@ -33,21 +22,23 @@ public class RecruitmentController {
      * Route: GET /api/recruitment/applications/filter
      */
     @GetMapping("/applications/filter")
-    public ResponseEntity<List<Applicant>> filterApplications(
+    public ResponseEntity<List<ApplicantDto>> filterApplications(
             @RequestParam Long jobListingId,
             @RequestParam Integer minExperience,
             @RequestParam(defaultValue = "false") Boolean requiresCertification) {
 
+        // Validate basic HTTP request inputs
         if (jobListingId == null || jobListingId <= 0) {
             return ResponseEntity.badRequest().build();
         }
-        if (minExperience == null || minExperience < 0) { // Changed to < 0 since 0 years of experience is valid
+        if (minExperience == null || minExperience < 0) {
             return ResponseEntity.badRequest().build();
         }
 
-        List<Applicant> filteredApplications = recruitmentService.filterApplications(jobListingId, minExperience, requiresCertification);
+        // TODO: Call service layer to get filtered ApplicantDto list
+        // List<ApplicantDto> dtos = recruitmentService.filterApplications(...);
 
-        return ResponseEntity.ok(filteredApplications);
+        return ResponseEntity.ok(null); // TODO: Return the result
     }
 
     /**
@@ -59,16 +50,10 @@ public class RecruitmentController {
             @RequestParam Long applicantId,
             @RequestParam Long jobListingId) {
 
-        Optional<Applicant> applicantOpt = applicantRepository.findById(applicantId);
-        Optional<JobListing> jobListingOpt = jobListingRepository.findById(jobListingId);
+        // TODO: Call service layer to fetch entities, calculate score, and return score value
+        // Double score = recruitmentService.calculateMatchScore(...);
 
-        if (applicantOpt.isEmpty() || jobListingOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        Double score = recruitmentService.calculateMatchScore(applicantOpt.get(), jobListingOpt.get());
-
-        return new ResponseEntity<>(score, HttpStatus.OK);
+        return ResponseEntity.ok(null); // TODO: Return the calculated score
     }
 
     /**
@@ -85,7 +70,8 @@ public class RecruitmentController {
             return ResponseEntity.badRequest().build();
         }
 
-        recruitmentService.bulkUpdateCandidateStatuses(request.getApplicantIds(), request.getNewStatus());
+        // TODO: Call service layer to update candidate statuses
+        // recruitmentService.bulkUpdateCandidateStatuses(...);
 
         return ResponseEntity.ok().build();
     }
