@@ -39,7 +39,9 @@ smart-recruiting/
 
 ## 2. Core Workflow
 
-The typical path of data and logic execution flow within the service is structured as follows:
+The typical path of data and logic execution flow within the service features two main execution workflows:
+
+### A. Candidate Filtering (Spring Boot Backend)
 
 ```mermaid
 sequenceDiagram
@@ -66,11 +68,31 @@ sequenceDiagram
     deactivate Controller
 ```
 
-1.  **Request Entry**: Client submits an HTTP request to `RecruitmentController`.
+1.  **Request Entry**: The Client submits an HTTP request to `RecruitmentController`.
 2.  **Service Delegation**: The Controller delegates the processing to `RecruitmentService`.
 3.  **Data Fetching**: The Service queries the Repositories using JPA methods to fetch the applicant and job listing contexts.
 4.  **In-Memory Processing**: The Service performs business logic calculations, such as match scoring and stream-based filtering, without overloading the database.
 5.  **State Synchronization**: Bulk changes and updates are saved back to the database through batch repository transactions.
+
+### B. NLP-Based Resume Matching (Python Microservice)
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant PyService as Python Matching Service (Port 5000)
+
+    Client->>PyService: POST /match-score (JSON payload)
+    activate PyService
+    Note over PyService: Extract features using TF-IDF<br/>(with English stop words removed)
+    Note over PyService: Calculate cosine similarity<br/>between job description & resume
+    PyService-->>Client: JSON response { "match_score": float } (200 OK)
+    deactivate PyService
+```
+
+1.  **Payload Submission**: The Client sends a `POST` request to the matching microservice containing the job description and candidate resume.
+2.  **Vectorization**: The service vectorizes both documents using `TfidfVectorizer` (with English stop words removed).
+3.  **Similarity Analysis**: The service computes the cosine similarity coefficient between the vector space models.
+4.  **Score Return**: The similarity is transformed into a percentage score (0-100) and returned to the client as JSON.
 
 ---
 
