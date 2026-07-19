@@ -113,3 +113,69 @@ Here is the current implementation status of our core backend:
     mvn spring-boot:run
     ```
     Alternatively, run the `main` method in `SmartRecruitingApplication.java`.
+
+---
+
+## 5. Python Matching Microservice
+
+The system features a companion Python-based matching microservice (`matching_service.py`) that calculates the similarity score between a job description and an applicant's resume.
+
+### Overview
+This is a Flask-based microservice that calculates a similarity score between a job description and an applicant's resume.
+
+### Machine Learning Approach
+*   **TF-IDF (Term Frequency-Inverse Document Frequency) Vectorization**: Handled via scikit-learn's `TfidfVectorizer`.
+*   **Cosine Similarity**: Measures the angle between the two resulting vectors to compute their alignment.
+
+### Processing Pipeline
+The matching pipeline converts textual data to a numerical match score using the following stages:
+
+```text
+Raw Text ──> TF-IDF Vectorization ──> Cosine Similarity Calculation ──> Percentage Match Score
+             (English stop words      (Angle between vectors)          (0 - 100)
+              removed)
+```
+
+1.  **Raw Text**: Accept raw string inputs for the job description and applicant resume.
+2.  **TF-IDF Vectorization**: Perform vectorization with English stop words removed.
+3.  **Cosine Similarity Calculation**: Calculate the cosine similarity between the job description and resume vectors.
+4.  **Percentage Match Score**: Convert the similarity score to a percentage match score (0-100).
+
+### API Contract
+
+#### `POST /match-score`
+
+*   **Request Body (JSON)**:
+    ```json
+    {
+      "job_description": "string",
+      "applicant_resume": "string"
+    }
+    ```
+*   **Response Body (JSON)**:
+    ```json
+    {
+      "match_score": 85.5
+    }
+    ```
+    *Returns a `match_score` float (0-100).*
+
+### Setup and Running
+
+1.  **Create a Virtual Environment**:
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+
+2.  **Install Dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3.  **Run the Server**:
+    ```bash
+    python3 matching_service.py
+    ```
+    The server runs on port `5000` (e.g., `http://localhost:5000`).
+
