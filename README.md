@@ -74,25 +74,60 @@ sequenceDiagram
 4.  **In-Memory Processing**: The Service performs business logic calculations, such as match scoring and stream-based filtering, without overloading the database.
 5.  **State Synchronization**: Bulk changes and updates are saved back to the database through batch repository transactions.
 
-### B. NLP-Based Resume Matching (Python Microservice)
+### B. Integrated Match Scoring (Spring Boot & Python Microservice)
+
+This workflow shows the integration of the Spring Boot Java backend components and the Flask Python matching service during a match score calculation request:
 
 ```mermaid
 sequenceDiagram
     participant Client
+    participant Controller as RecruitmentController
+    participant Service as RecruitmentService
+    participant AppRepo as ApplicantRepository
+    participant JobRepo as JobListingRepository
+    participant DB as Database
     participant PyService as Python Matching Service (Port 5000)
 
-    Client->>PyService: POST /match-score (JSON payload)
+    Client->>Controller: GET /api/recruitment/match-score?applicantId=1&jobListingId=2
+    activate Controller
+    Controller->>Service: calculateMatchScore(1, 2)
+    activate Service
+
+    Service->>AppRepo: findById(1)
+    activate AppRepo
+    AppRepo->>DB: SELECT * FROM applicant WHERE id = 1
+    DB-->>AppRepo: Applicant Data
+    AppRepo-->>Service: Applicant Entity
+    deactivate AppRepo
+
+    Service->>JobRepo: findById(2)
+    activate JobRepo
+    JobRepo->>DB: SELECT * FROM job_listing WHERE id = 2
+    DB-->>JobRepo: JobListing Data
+    JobRepo-->>Service: JobListing Entity
+    deactivate JobRepo
+
+    Note over Service: Extract job_description<br/>and applicant_resume
+    
+    Service->>PyService: POST /match-score {job_description, applicant_resume}
     activate PyService
-    Note over PyService: Extract features using TF-IDF<br/>(with English stop words removed)
-    Note over PyService: Calculate cosine similarity<br/>between job description & resume
-    PyService-->>Client: JSON response { "match_score": float } (200 OK)
+    Note over PyService: TF-IDF Vectorization<br/>& Cosine Similarity
+    PyService-->>Service: JSON { "match_score": 85.5 }
     deactivate PyService
+
+    Note over Service: Calculate experience, certification,<br/>and NLP similarity weightings
+    Service-->>Controller: finalMatchScore (Double)
+    deactivate Service
+    Controller-->>Client: ResponseEntity<Double> (200 OK)
+    deactivate Controller
 ```
 
-1.  **Payload Submission**: The Client sends a `POST` request to the matching microservice containing the job description and candidate resume.
-2.  **Vectorization**: The service vectorizes both documents using `TfidfVectorizer` (with English stop words removed).
-3.  **Similarity Analysis**: The service computes the cosine similarity coefficient between the vector space models.
-4.  **Score Return**: The similarity is transformed into a percentage score (0-100) and returned to the client as JSON.
+1.  **Request Entry**: The Client requests a match score computation by hitting `GET /api/recruitment/match-score` on `RecruitmentController`.
+2.  **Service Delegation**: The Controller invokes `calculateMatchScore` on `RecruitmentService`.
+3.  **Data Fetching**: The Service retrieves the candidate profile via `ApplicantRepository` and the job criteria via `JobListingRepository` from the `Database`.
+4.  **Microservice Integration**: The Service extracts the job description and candidate resume text fields and posts them as a JSON payload to the Flask-based **Python Matching Service** (`POST /match-score` on port 5000).
+5.  **NLP Matching**: The Python service computes the cosine similarity of the TF-IDF representation of both texts, returning the `match_score` percentage.
+6.  **Score Synthesis & Return**: The Service combines the NLP similarity score with other criteria (experience, certification status) to calculate the final score and passes it back to the Controller, which responds to the Client with `200 OK`.
 
 ---
 
