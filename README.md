@@ -9,27 +9,29 @@ A professional, high-performance recruiting and applicant matching system built 
 The system follows a clean, layered architectural pattern mapping directly to standard Spring Boot conventions:
 
 ```text
-src/main/java/com/recruitment/api/
-├── SmartRecruitingApplication.java    # Application entry point
-├── controller/
-│   └── RecruitmentController.java     # REST Endpoints for client interaction
-├── model/
-│   ├── Applicant.java                 # JPA Entity representing candidates
-│   └── JobListing.java                # JPA Entity representing job postings
-├── repository/
-│   ├── ApplicantRepository.java       # Data access layer for Applicant
-│   └── JobListingRepository.java      # Data access layer for JobListing
-└── service/
-    └── RecruitmentService.java        # Core business logic orchestration
+smart-recruiting/
+├── matching_service.py                # Python matching microservice (Flask/scikit-learn)
+├── requirements.txt                   # Python dependencies configuration
+└── src/main/java/com/recruitment/api/
+    ├── SmartRecruitingApplication.java # Application entry point
+    ├── controller/
+    │   └── RecruitmentController.java  # REST Endpoints for client interaction
+    ├── model/
+    │   ├── Applicant.java              # JPA Entity representing candidates
+    │   └── JobListing.java             # JPA Entity representing job postings
+    ├── repository/
+    │   ├── ApplicantRepository.java    # Data access layer for Applicant
+    │   └── JobListingRepository.java   # Data access layer for JobListing
+    └── service/
+        └── RecruitmentService.java     # Core business logic orchestration
 ```
 
 ### Layer Responsibilities
 
+*   **Python Matching Microservice (`matching_service.py`)**: A separate natural language processing service that performs job-resume text matching via TF-IDF and cosine similarity.
 *   **Controller Layer (`controller/`)**: Exposes REST API endpoints and handles incoming HTTP requests/responses, payload validation, and HTTP routing.
 *   **Model Layer (`model/`)**: Defines the core data entities and mappings to the relational database.
-    *   `Applicant`: Represents candidate profiles containing contact information, work experience, certification status, status, and their linked job application.
-    *   `JobListing`: Defines the criteria for a job position, including minimum required experience and certification status.
-*   **Repository Layer (`repository/`)**: Abstracts databases queries using Spring Data JPA. Includes custom query methods to retrieve applicants by job listings.
+*   **Repository Layer (`repository/`)**: Abstracts database queries using Spring Data JPA. Includes custom query methods to retrieve applicants by job listings.
 *   **Service Layer (`service/`)**: Houses business logic, validations, and workflows (e.g., filtering candidates, scoring, and status transitions).
 *   **Application Bootstrapping (`SmartRecruitingApplication`)**: Initializes the Spring application context and autowiring.
 
