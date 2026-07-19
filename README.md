@@ -41,38 +41,40 @@ smart-recruiting/
 
 The typical path of data and logic execution flow within the service features two main execution workflows:
 
-### A. Candidate Filtering (Spring Boot Backend)
+### A. Job Posting Workflow (Spring Boot Backend)
+
+This workflow shows how a recruiter or client creates a new job listing in the system:
 
 ```mermaid
 sequenceDiagram
     participant Client
     participant Controller as RecruitmentController
     participant Service as RecruitmentService
-    participant Repo as ApplicantRepository
+    participant JobRepo as JobListingRepository
     participant DB as Database
 
-    Client->>Controller: GET /applications/filter
+    Client->>Controller: POST /api/recruitment/jobs (Job Details JSON)
     activate Controller
-    Controller->>Service: filterApplications(jobListingId, minExperience, requiresCert)
+    Controller->>Service: createJobListing(jobListingDto)
     activate Service
-    Service->>Repo: findByJobListingId(jobListingId)
-    activate Repo
-    Repo->>DB: SELECT * FROM applicant WHERE job_listing_id = ?
-    DB-->>Repo: ResultSet
-    Repo-->>Service: List<Applicant>
-    deactivate Repo
-    Note over Service: Apply Java Streams to filter<br/>by years of experience<br/>and certification status
-    Service-->>Controller: List<Filtered Applicants>
+    Note over Service: Map DTO to JobListing Entity
+    Service->>JobRepo: save(jobListing)
+    activate JobRepo
+    JobRepo->>DB: INSERT INTO job_listing (...)
+    DB-->>JobRepo: Saved JobListing Record
+    JobRepo-->>Service: Saved JobListing Entity
+    deactivate JobRepo
+    Service-->>Controller: Saved JobListingDto
     deactivate Service
-    Controller-->>Client: ResponseEntity<List<Applicant>> (200 OK)
+    Controller-->>Client: ResponseEntity<JobListingDto> (201 Created)
     deactivate Controller
 ```
 
-1.  **Request Entry**: The Client submits an HTTP request to `RecruitmentController`.
-2.  **Service Delegation**: The Controller delegates the processing to `RecruitmentService`.
-3.  **Data Fetching**: The Service queries the Repositories using JPA methods to fetch the applicant and job listing contexts.
-4.  **In-Memory Processing**: The Service performs business logic calculations, such as match scoring and stream-based filtering, without overloading the database.
-5.  **State Synchronization**: Bulk changes and updates are saved back to the database through batch repository transactions.
+1.  **Request Entry**: The Client posts job details to `POST /api/recruitment/jobs` on `RecruitmentController`.
+2.  **Service Delegation**: The Controller forwards the payload to `RecruitmentService.createJobListing`.
+3.  **Entity Mapping**: The Service maps the incoming DTO parameters (e.g., job name, job description, minimum work experience, and required certifications) to a JPA `JobListing` entity.
+4.  **Database Persistence**: The Service calls `JobListingRepository.save(jobListing)` to insert the job listing record into the `Database`.
+5.  **Confirmation & Response**: The persisted entity is mapped back to a DTO and returned through the Controller with a `201 Created` status.
 
 ### B. Integrated Match Scoring (Spring Boot & Python Microservice)
 
