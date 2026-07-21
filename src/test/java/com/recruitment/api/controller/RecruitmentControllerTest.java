@@ -31,8 +31,26 @@ class RecruitmentControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        JobListingDto jobListingDto = new JobListingDto(1L, "Software Engineer", "Description", 3, true);
-        applicantDto = new ApplicantDto(1L, "Alice", "Smith", "alice@example.com", "123", "NID1", 4, true, "PENDING", jobListingDto);
+        JobListingDto jobListingDto = JobListingDto.builder()
+                .id(1L)
+                .jobName("Software Engineer")
+                .jobDescription("Description")
+                .minimumWorkExperience(3)
+                .requiredCertification(true)
+                .build();
+        applicantDto = ApplicantDto.builder()
+                .id(1L)
+                .firstName("Alice")
+                .lastName("Smith")
+                .email("alice@example.com")
+                .phoneNumber("123")
+                .nationalId("NID1")
+                .yearsOfExperience(4)
+                .hasCertification(true)
+                .status("PENDING")
+                .jobListing(jobListingDto)
+                .resumeText("Resume Content")
+                .build();
     }
 
     @Test

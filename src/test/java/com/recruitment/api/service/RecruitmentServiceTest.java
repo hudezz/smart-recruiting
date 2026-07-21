@@ -1,5 +1,6 @@
 package com.recruitment.api.service;
 
+import com.recruitment.api.client.PythonMlClient;
 import com.recruitment.api.dto.ApplicantDto;
 import com.recruitment.api.model.Applicant;
 import com.recruitment.api.model.JobListing;
@@ -27,6 +28,9 @@ class RecruitmentServiceTest {
     @Mock
     private JobListingRepository jobListingRepository;
 
+    @Mock
+    private PythonMlClient pythonMlClient;
+
     @InjectMocks
     private RecruitmentService recruitmentService;
 
@@ -41,9 +45,9 @@ class RecruitmentServiceTest {
         Long jobListingId = 1L;
         JobListing jobListing = new JobListing(jobListingId, "Software Engineer", "Description", 3, true);
         
-        Applicant app1 = new Applicant(1L, "Alice", "Smith", "alice@example.com", "pass", "123", "NID1", 4, true, jobListing, "PENDING");
-        Applicant app2 = new Applicant(2L, "Bob", "Jones", "bob@example.com", "pass", "456", "NID2", 2, true, jobListing, "PENDING");
-        Applicant app3 = new Applicant(3L, "Charlie", "Brown", "charlie@example.com", "pass", "789", "NID3", 5, false, jobListing, "PENDING");
+        Applicant app1 = new Applicant(1L, "Alice", "Smith", "alice@example.com", "pass", "123", "NID1", 4, true, jobListing, "PENDING", "");
+        Applicant app2 = new Applicant(2L, "Bob", "Jones", "bob@example.com", "pass", "456", "NID2", 2, true, jobListing, "PENDING", "");
+        Applicant app3 = new Applicant(3L, "Charlie", "Brown", "charlie@example.com", "pass", "789", "NID3", 5, false, jobListing, "PENDING", "");
 
         when(jobListingRepository.findById(jobListingId)).thenReturn(Optional.of(jobListing));
         when(applicantRepository.findByJobListingId(jobListingId)).thenReturn(Arrays.asList(app1, app2, app3));

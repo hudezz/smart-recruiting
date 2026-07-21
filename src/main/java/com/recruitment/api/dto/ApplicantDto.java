@@ -20,4 +20,5 @@ public class ApplicantDto {
     private Boolean hasCertification;
     private String status;
     private JobListingDto jobListing;
+    private String resumeText;
 }

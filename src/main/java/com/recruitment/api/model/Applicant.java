@@ -26,4 +26,6 @@ public class Applicant {
     @JoinColumn(name = "job_listing_id")
     private JobListing jobListing;
     private String status;
+    @Column(columnDefinition = "TEXT")
+    private String resumeText;
 }
