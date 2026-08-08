@@ -18,6 +18,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+// RecruitmentService is mocked: these tests verify request validation and
+// HTTP status/body wiring in the controller, not the service's business logic
+// (that's covered in RecruitmentServiceTest).
 class RecruitmentControllerTest {
 
     @Mock
@@ -37,14 +40,13 @@ class RecruitmentControllerTest {
 
     @Test
     void testFilterApplications_Success() {
-        // TODO: Update or implement mock verification after implementing controller logic
         when(recruitmentService.filterApplications(1L, 3, true))
                 .thenReturn(Collections.singletonList(applicantDto));
 
         ResponseEntity<List<ApplicantDto>> response = recruitmentController.filterApplications(1L, 3, true);
 
-        // Note: Change assertion based on your implementation
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(Collections.singletonList(applicantDto), response.getBody());
     }
 
     @Test
@@ -59,8 +61,14 @@ class RecruitmentControllerTest {
 
         ResponseEntity<Double> response = recruitmentController.getMatchScore(1L, 1L);
 
-        // Note: Change assertion based on your implementation
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(85.0, response.getBody());
+    }
+
+    @Test
+    void testGetMatchScore_BadRequest_InvalidId() {
+        ResponseEntity<Double> response = recruitmentController.getMatchScore(-1L, 1L);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test

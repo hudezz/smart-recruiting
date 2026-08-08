@@ -78,12 +78,13 @@ Here is the current implementation status of our core backend:
 
 | Component | Status | Details |
 | :--- | :--- | :--- |
-| **Controller Endpoints** | `Blueprint` | RestController scaffolded with GET/POST endpoint blueprints awaiting controller logic mapping. |
+| **Controller Endpoints** | `Active` | All three endpoints (`applications/filter`, `match-score`, `applications/bulk-status`) are wired to `RecruitmentService`, with request validation and centralized error handling via `GlobalExceptionHandler`. |
 | **Model Mapping** | `Active` | Complete JPA setup for `Applicant` and `JobListing` with H2/relational database mapping. |
 | **Data Access** | `Active` | `ApplicantRepository` and `JobListingRepository` interfaces are active, including custom query methods like `findByJobListingId`. |
-| **Application Filtering** | `Active` | Implemented in `RecruitmentService#filterApplications` using Java Streams. Filters applications by experience duration and required certifications in-memory. |
-| **Match Score Engine** | `Active` | Calculates experience validation and certification weighting to compute scores. |
-| **Bulk Updates** | `Active` | Complete transaction workflow to batch update candidate status fields. |
+| **Application Filtering** | `Active` | Implemented in `RecruitmentService#filterApplications` using Java Streams. Filters applications by experience duration and required certifications in-memory; returns 404 if the job listing doesn't exist. |
+| **Match Score Engine** | `Active` | Rule-based score (0-100) in `RecruitmentService#calculateMatchScore`: 70 points weighted by years-of-experience ratio against the listing's minimum, 30 points for certification match. |
+| **Bulk Updates** | `Active` | Transactional workflow in `RecruitmentService#bulkUpdateCandidateStatuses` batch-updates candidate status fields. |
+| **Text-Similarity Matching** | `Planned` | `matching_service.py` (repo root) is a standalone Flask/TF-IDF microservice for scoring resume text against a job description. It is **not yet integrated** with the Java API — `Applicant` has no resume-text field, and there's no HTTP client wiring it up. Left as a future enhancement rather than a rule-based replacement. |
 
 ---
 
@@ -113,3 +114,6 @@ Here is the current implementation status of our core backend:
     mvn spring-boot:run
     ```
     Alternatively, run the `main` method in `SmartRecruitingApplication.java`.
+
+4.  **Explore the Database**:
+    The app boots with an in-memory H2 database (`application.properties`). While running, the console is available at `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:recruitmentdb`, user: `sa`, no password). Data does not persist across restarts.
