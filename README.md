@@ -12,6 +12,7 @@ The system follows a clean, layered architectural pattern mapping directly to st
 smart-recruiting/
 ├── matching_service.py                # Python matching microservice (Flask/scikit-learn)
 ├── requirements.txt                   # Python dependencies configuration
+├── frontend/                          # Next.js app (marketing site, admin docket, applicant flow)
 └── src/main/java/com/recruitment/api/
     ├── SmartRecruitingApplication.java # Application entry point
     ├── controller/
@@ -181,6 +182,15 @@ Here is the current implementation status of our core backend:
 
 4.  **Explore the Database**:
     The app boots with an in-memory H2 database (`application.properties`). While running, the console is available at `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:recruitmentdb`, user: `sa`, no password). Data does not persist across restarts.
+
+5.  **Run the Frontend** (optional):
+    The Next.js app in `frontend/` gives the API a real UI — a marketing page, a recruiter admin docket, and a public application flow — and proxies `/api/recruitment/*` to this backend, so no CORS setup is needed.
+    ```bash
+    cd frontend
+    npm install
+    npm run dev
+    ```
+    Visit `http://localhost:3000` once both the backend (port 8080) and frontend (port 3000) are running.
 
 ---
 

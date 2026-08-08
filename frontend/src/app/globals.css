@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens for the editorial spec's palette: charcoal ink, slate-gray
+ * body text, warm off-white canvas, and minimal accent color. Status colors
+ * (good/warn/closed) are intentionally separate from ink/paper so the admin
+ * docket's status pills read as their own semantic layer, not as the brand.
+ *
+ * Light values live on bare :root; the dark values below only override them
+ * under prefers-color-scheme, so a browser with no dark-mode preference still
+ * gets a fully defined light palette.
+ */
+:root {
+  --paper: #f7f6f2;
+  --paper-raised: #efede6;
+  --paper-sunk: #e8e5db;
+  --ink: #111111;
+  --ink-muted: #666666;
+  --ink-faint: #9a9a94;
+  --line: #e2dfd6;
+  --line-strong: #cfccc0;
+
+  --good: #2f7d52;
+  --good-tint: #e7f1e7;
+  --warn: #a6762e;
+  --warn-tint: #f5edd9;
+  --closed: #8a8878;
+  --closed-tint: #f1efe6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #121212;
+    --paper-raised: #1a1a1a;
+    --paper-sunk: #1f1f1f;
+    --ink: #f2f1ee;
+    --ink-muted: #a3a29b;
+    --ink-faint: #6f6e67;
+    --line: #2a2a27;
+    --line-strong: #38372f;
+
+    --good: #4cae7b;
+    --good-tint: #17251c;
+    --warn: #d9a94c;
+    --warn-tint: #2a2214;
+    --closed: #a79c89;
+    --closed-tint: #221d15;
+  }
+}
+
+/* Maps the raw color/font variables above to Tailwind's utility namespace,
+   so e.g. `bg-paper` or `font-serif` resolve to the current theme's values. */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-good: var(--good);
+  --color-good-tint: var(--good-tint);
+  --color-warn: var(--warn);
+  --color-warn-tint: var(--warn-tint);
+  --color-closed: var(--closed);
+  --color-closed-tint: var(--closed-tint);
+
+  --font-serif: var(--font-fraunces);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-plex-mono);
+}
+
+body {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* Balanced heading line-wrapping, used on serif headlines throughout the site. */
+.balance {
+  text-wrap: balance;
+}
+
+/* Shared text-input styling for the application form (ApplyFlow.tsx). */
+.input {
+  @apply w-full rounded-md border border-line-strong bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-faint focus:border-ink;
+}
