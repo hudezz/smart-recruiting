@@ -5,6 +5,25 @@ import com.recruitment.api.model.JobListing;
 
 public class RecruitmentMapper {
 
+    /**
+     * Builds a new {@link Applicant} entity from a public application submission.
+     * New applicants always start life as PENDING — status is only ever changed
+     * afterward via the bulk-status-update endpoint. resumeText is left unset since
+     * the public application form doesn't collect it yet.
+     */
+    public static Applicant fromCreateRequest(CreateApplicantRequest request, JobListing jobListing) {
+        Applicant applicant = new Applicant();
+        applicant.setFirstName(request.getFirstName());
+        applicant.setLastName(request.getLastName());
+        applicant.setEmail(request.getEmail());
+        applicant.setPhoneNumber(request.getPhoneNumber());
+        applicant.setYearsOfExperience(request.getYearsOfExperience());
+        applicant.setHasCertification(request.getHasCertification());
+        applicant.setJobListing(jobListing);
+        applicant.setStatus("PENDING");
+        return applicant;
+    }
+
     public static JobListingDto toDto(JobListing entity) {
         if (entity == null) {
             return null;
@@ -69,4 +88,3 @@ public class RecruitmentMapper {
         return entity;
     }
 }
-

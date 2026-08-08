@@ -76,7 +76,9 @@ sequenceDiagram
 4.  **Database Persistence**: The Service calls `JobListingRepository.save(jobListing)` to insert the job listing record into the `Database`.
 5.  **Confirmation & Response**: The persisted entity is mapped back to a DTO and returned through the Controller with a `201 Created` status.
 
-### B. Integrated Match Scoring (Spring Boot & Python Microservice)
+### B. Integrated Match Scoring (Spring Boot & Python Microservice) — Target Architecture
+
+> **Not yet implemented.** This diagram shows the intended end state once `RecruitmentService#calculateMatchScore` is wired up to call `PythonMlClient`. Today, match scores are computed entirely in Java from structured fields (experience + certification) — see the "Match Score Engine" row above. The Python service itself is real and runnable (Section 5), it just isn't called from Java yet.
 
 This workflow shows the integration of the Spring Boot Java backend components and the Flask Python matching service during a match score calculation request:
 
@@ -139,12 +141,14 @@ Here is the current implementation status of our core backend:
 
 | Component | Status | Details |
 | :--- | :--- | :--- |
-| **Controller Endpoints** | `Blueprint` | RestController scaffolded with GET/POST endpoint blueprints awaiting controller logic mapping. |
+| **Controller Endpoints** | `Active` | All three endpoints (`applications/filter`, `match-score`, `applications/bulk-status`) are wired to `RecruitmentService`, with request validation and centralized error handling via `GlobalExceptionHandler`. |
 | **Model Mapping** | `Active` | Complete JPA setup for `Applicant` and `JobListing` with H2/relational database mapping. |
 | **Data Access** | `Active` | `ApplicantRepository` and `JobListingRepository` interfaces are active, including custom query methods like `findByJobListingId`. |
-| **Application Filtering** | `Active` | Implemented in `RecruitmentService#filterApplications` using Java Streams. Filters applications by experience duration and required certifications in-memory. |
-| **Match Score Engine** | `Active` | Calculates experience validation and certification weighting to compute scores. |
-| **Bulk Updates** | `Active` | Complete transaction workflow to batch update candidate status fields. |
+| **Application Filtering** | `Active` | Implemented in `RecruitmentService#filterApplications` using Java Streams. Filters applications by experience duration and required certifications in-memory; returns 404 if the job listing doesn't exist. |
+| **Match Score Engine** | `Active` | Rule-based score (0-100) in `RecruitmentService#calculateMatchScore`: 70 points weighted by years-of-experience ratio against the listing's minimum, 30 points for certification match. |
+| **Bulk Updates** | `Active` | Transactional workflow in `RecruitmentService#bulkUpdateCandidateStatuses` batch-updates candidate status fields. |
+| **Public Application API** | `Active` | `GET /job-listings`, `POST /applicants`, and `GET /applicants/{id}` let a candidate browse open roles, submit an application (always starts `PENDING`), and check their own status. |
+| **Text-Similarity Matching** | `Scaffolded` | `matching_service.py` (see Section 5) is a standalone, runnable Flask/TF-IDF microservice for scoring resume text against a job description. `Applicant#resumeText` and `PythonMlClient` exist on the Java side as the intended integration point, but `RecruitmentService#calculateMatchScore` doesn't call it yet — match scores today are rule-based only (experience + certification). |
 
 ---
 
@@ -174,6 +178,9 @@ Here is the current implementation status of our core backend:
     mvn spring-boot:run
     ```
     Alternatively, run the `main` method in `SmartRecruitingApplication.java`.
+
+4.  **Explore the Database**:
+    The app boots with an in-memory H2 database (`application.properties`). While running, the console is available at `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:recruitmentdb`, user: `sa`, no password). Data does not persist across restarts.
 
 ---
 
@@ -239,4 +246,3 @@ Raw Text ──> TF-IDF Vectorization ──> Cosine Similarity Calculation ─�
     python3 matching_service.py
     ```
     The server runs on port `5000` (e.g., `http://localhost:5000`).
-
