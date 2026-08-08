@@ -192,6 +192,17 @@ Here is the current implementation status of our core backend:
     ```
     Visit `http://localhost:3000` once both the backend (port 8080) and frontend (port 3000) are running.
 
+### Deploying the Frontend (Vercel)
+
+Since `frontend/` isn't the repo root, Vercel needs to be told where to find it:
+
+*   **Settings → General → Root Directory** → `frontend`. Framework Preset should then auto-detect as **Next.js**; clear any manually-set Build/Install Command overrides so Vercel uses its own defaults.
+*   Set a **`BACKEND_ORIGIN`** environment variable pointing at wherever the Spring Boot API is actually reachable from the internet. `/admin` and `/apply` fetch job listings server-side at that address — without it (or with it left at the `localhost:8080` default), the pages still build and deploy fine, they'll just show the "can't reach the API" fallback.
+
+### Deploying the Backend
+
+The API needs to run somewhere continuously reachable — it won't stay up just because it's running on a local machine. Any Java-hosting platform that builds from a `pom.xml` (e.g. Railway, Render, Fly.io) works; point its `BACKEND_ORIGIN`-facing URL at the frontend's environment variable above. Note the H2 database is in-memory (see step 4) — every redeploy or restart resets it back to the seed data in `data.sql`.
+
 ---
 
 ## 5. Python Matching Microservice
