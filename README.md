@@ -79,7 +79,7 @@ sequenceDiagram
 
 ### B. Integrated Match Scoring (Spring Boot & Python Microservice) — Target Architecture
 
-> **Not yet implemented.** This diagram shows the intended end state once `RecruitmentService#calculateMatchScore` is wired up to call `PythonMlClient`. Today, match scores are computed entirely in Java from structured fields (experience + certification) — see the "Match Score Engine" row above. The Python service itself is real and runnable (Section 5), it just isn't called from Java yet.
+> **Implemented, as a separate endpoint.** `PythonMlClient` now calls the Python service, driven by `TextSimilarityService` and exposed as `GET /api/recruitment/text-similarity`. It is deliberately *not* folded into `/match-score`: that score is a rule-based 100 points (70 experience + 30 certification), and mixing a similarity percentage into the same total would silently change what every existing score means. Pick a weighting first, then merge them if you want a single number. In the diagram below, read `GET /api/recruitment/match-score` as `GET /api/recruitment/text-similarity`.
 
 This workflow shows the integration of the Spring Boot Java backend components and the Flask Python matching service during a match score calculation request:
 
@@ -142,14 +142,14 @@ Here is the current implementation status of our core backend:
 
 | Component | Status | Details |
 | :--- | :--- | :--- |
-| **Controller Endpoints** | `Active` | All three endpoints (`applications/filter`, `match-score`, `applications/bulk-status`) are wired to `RecruitmentService`, with request validation and centralized error handling via `GlobalExceptionHandler`. |
+| **Controller Endpoints** | `Active` | All four recruiter endpoints (`applications/filter`, `match-score`, `text-similarity`, `applications/bulk-status`) are wired up, with request validation and centralized error handling via `GlobalExceptionHandler`. |
 | **Model Mapping** | `Active` | Complete JPA setup for `Applicant` and `JobListing` with H2/relational database mapping. |
 | **Data Access** | `Active` | `ApplicantRepository` and `JobListingRepository` interfaces are active, including custom query methods like `findByJobListingId`. |
 | **Application Filtering** | `Active` | Implemented in `RecruitmentService#filterApplications` using Java Streams. Filters applications by experience duration and required certifications in-memory; returns 404 if the job listing doesn't exist. |
 | **Match Score Engine** | `Active` | Rule-based score (0-100) in `RecruitmentService#calculateMatchScore`: 70 points weighted by years-of-experience ratio against the listing's minimum, 30 points for certification match. |
 | **Bulk Updates** | `Active` | Transactional workflow in `RecruitmentService#bulkUpdateCandidateStatuses` batch-updates candidate status fields. |
 | **Public Application API** | `Active` | `GET /job-listings`, `POST /applicants`, and `GET /applicants/{id}` let a candidate browse open roles, submit an application (always starts `PENDING`), and check their own status. |
-| **Text-Similarity Matching** | `Scaffolded` | `matching_service.py` (see Section 5) is a standalone, runnable Flask/TF-IDF microservice for scoring resume text against a job description. `Applicant#resumeText` and `PythonMlClient` exist on the Java side as the intended integration point, but `RecruitmentService#calculateMatchScore` doesn't call it yet — match scores today are rule-based only (experience + certification). |
+| **Text-Similarity Matching** | `Active` | `GET /api/recruitment/text-similarity?applicantId=&jobListingId=` compares `Applicant#resumeText` with `JobListing#jobDescription` through `PythonMlClient` -> `matching_service.py` (TF-IDF + cosine, 0-100). Wired in `TextSimilarityService`. The service URL comes from `ml.service.base-url` (default `http://localhost:5000`). If the Python service isn't running the endpoint answers `503`, so "unavailable" is never mistaken for "scored zero". `/match-score` remains rule-based. |
 
 ---
 
@@ -248,6 +248,14 @@ Raw Text ──> TF-IDF Vectorization ──> Cosine Similarity Calculation ─�
     }
     ```
     *Returns a `match_score` float (0-100).*
+
+*   **Errors**: `400` if either field is missing or blank, `422` if the two
+    texts share no comparable words once English stop words are removed.
+
+#### `GET /health`
+
+Returns `{"status": "ok"}`. Lets the Java side tell "the service is down" apart
+from "the score is zero".
 
 ### Setup and Running
 

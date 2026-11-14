@@ -4,6 +4,7 @@ import com.recruitment.api.dto.ApplicantDto;
 import com.recruitment.api.dto.CreateApplicantRequest;
 import com.recruitment.api.dto.JobListingDto;
 import com.recruitment.api.service.RecruitmentService;
+import com.recruitment.api.service.TextSimilarityService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +24,12 @@ import java.util.List;
 public class RecruitmentController {
 
     private final RecruitmentService recruitmentService;
+    private final TextSimilarityService textSimilarityService;
 
-    public RecruitmentController(RecruitmentService recruitmentService) {
+    public RecruitmentController(RecruitmentService recruitmentService,
+                                 TextSimilarityService textSimilarityService) {
         this.recruitmentService = recruitmentService;
+        this.textSimilarityService = textSimilarityService;
     }
 
     /**
@@ -93,6 +97,27 @@ public class RecruitmentController {
 
         double score = recruitmentService.calculateMatchScore(applicantId, jobListingId);
         return ResponseEntity.ok(score);
+    }
+
+    /**
+     * Endpoint to score an applicant's resume text against a job description,
+     * via the Python matching microservice. Reported separately from
+     * {@code /match-score}, which stays rule-based.
+     * Route: GET /api/recruitment/text-similarity
+     *
+     * Answers 503 if the matching service is not running, 400 if either side
+     * has no text to compare, and 404 if an id is unknown.
+     */
+    @GetMapping("/text-similarity")
+    public ResponseEntity<Double> getTextSimilarity(
+            @RequestParam Long applicantId,
+            @RequestParam Long jobListingId) {
+
+        if (applicantId == null || applicantId <= 0 || jobListingId == null || jobListingId <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return ResponseEntity.ok(textSimilarityService.calculateTextSimilarity(applicantId, jobListingId));
     }
 
     /**
