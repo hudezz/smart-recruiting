@@ -23,4 +23,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleBadRequest(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
+
+    // The Python matching microservice being down is a 503, not a 500: the rest
+    // of the API still works, and the caller can retry or fall back to the
+    // rule-based score.
+    @ExceptionHandler(MlServiceUnavailableException.class)
+    public ResponseEntity<String> handleMlServiceUnavailable(MlServiceUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ex.getMessage());
+    }
 }
